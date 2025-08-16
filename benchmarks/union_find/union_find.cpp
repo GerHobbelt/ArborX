@@ -160,6 +160,8 @@ int main(int argc, char *argv[])
             << std::endl;
 
   benchmark::Initialize(&argc, argv);
+  if (benchmark::ReportUnrecognizedArguments(argc, argv))
+    return EXIT_FAILURE; 
 
   BENCHMARK_TEMPLATE1(BM_union_find, AllowLoops)
       ->RangeMultiplier(10)

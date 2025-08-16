@@ -36,10 +36,12 @@ void BM_benchmark(benchmark::State &state)
   }
 }
 
-int main(int argc, char *argv[])
+int main(int argc, const char **argv)
 {
   Kokkos::ScopeGuard guard(argc, argv);
   benchmark::Initialize(&argc, argv);
+  if (benchmark::ReportUnrecognizedArguments(argc, argv))
+    return 1; 
 
   BENCHMARK(BM_benchmark)->RangeMultiplier(10)->Range(100, 10000);
 
