@@ -13,7 +13,7 @@
 #define ARBORX_DISTRIBUTED_DBSCAN_HELPERS_HPP
 
 #include <ArborX_Box.hpp>
-#include <ArborX_BruteForce.hpp>
+#include <ArborX_LinearBVH.hpp>
 #include <detail/ArborX_Distributor.hpp>
 #include <detail/ArborX_Predicates.hpp>
 #include <detail/ArborX_TreeConstruction.hpp>
@@ -46,10 +46,11 @@ struct PointsRequiringResolution
   Coordinate _eps;
 };
 
-// FIXME_CLANG(Clang<17): Clang 16 or earlier does not support aggregate
-// initialization type deduction
+// FIXME_CLANG(Clang<=17): Clang 16 and some Clang 17 based compilers do not
+// support aggregate initialization type deduction
 // https://github.com/llvm/llvm-project/issues/54050
-#if defined(__clang__) && (__clang_major__ < 17)
+// Reproducer: https://godbolt.org/z/nEdjb5rP4
+#if defined(__clang__) && KOKKOS_COMPILER_CLANG < 17001
 template <typename Points, typename GhostPoints>
 KOKKOS_DEDUCTION_GUIDE UnifiedPoints(Points, GhostPoints)
     -> UnifiedPoints<Points, GhostPoints>;
@@ -191,18 +192,16 @@ struct IndexOnlyCallback
 };
 
 template <typename ExecutionSpace, typename Points, typename Coordinate,
-          typename GhostPoints, typename GhostIds, typename GhostRanks>
-void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
-                      Coordinate eps, GhostPoints &ghost_points,
-                      GhostIds &ghost_ids, GhostRanks &ghost_ranks)
+          typename Offsets, typename RanksTo>
+void computeRanksTo(MPI_Comm comm, ExecutionSpace const &space,
+                    Points const &points, Coordinate eps, Offsets &offsets,
+                    RanksTo &ranks_to)
 {
-  std::string prefix = "ArborX::DistributedDBSCAN::forwardNeighbors";
+  std::string prefix = "ArborX::DistributedDBSCAN::computeRanksTo";
   Kokkos::Profiling::ScopedRegion guard(prefix);
   prefix += "::";
 
   using MemorySpace = typename Points::memory_space;
-
-  using Point = typename Points::value_type;
 
   int comm_size;
   MPI_Comm_size(comm, &comm_size);
@@ -237,11 +236,28 @@ void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
   Kokkos::resize(space, primitives, num_primitives);
   Kokkos::resize(space, global_boxes, 0); // free space
 
-  BruteForce index(space, primitives);
-  Kokkos::View<int *, MemorySpace> offsets(prefix + "offsets", 0);
-  Kokkos::View<int *, MemorySpace> ranks_to(prefix + "ranks_to", 0);
+  BoundingVolumeHierarchy index(space, primitives);
   index.query(space, Experimental::make_intersects(points, eps),
               IndexOnlyCallback{}, ranks_to, offsets);
+}
+
+template <typename ExecutionSpace, typename Points, typename Coordinate,
+          typename GhostPoints, typename GhostIds, typename GhostRanks>
+void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
+                      Coordinate eps, GhostPoints &ghost_points,
+                      GhostIds &ghost_ids, GhostRanks &ghost_ranks)
+{
+  std::string prefix = "ArborX::DistributedDBSCAN::forwardNeighbors";
+  Kokkos::Profiling::ScopedRegion guard(prefix);
+  prefix += "::";
+
+  using MemorySpace = typename Points::memory_space;
+
+  using Point = typename Points::value_type;
+
+  Kokkos::View<int *, MemorySpace> offsets(prefix + "offsets", 0);
+  Kokkos::View<int *, MemorySpace> ranks_to(prefix + "ranks_to", 0);
+  computeRanksTo(comm, space, points, eps, offsets, ranks_to);
 
   // FIXME: very similar to DistributedTree::forwardQueries
   Distributor<MemorySpace> distributor(comm);
@@ -286,6 +302,9 @@ void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
   }
 
   {
+    int comm_rank;
+    MPI_Comm_rank(comm, &comm_rank);
+
     Kokkos::View<int *, MemorySpace> export_ranks(
         Kokkos::view_alloc(space, Kokkos::WithoutInitializing,
                            prefix + "export_ranks"),
