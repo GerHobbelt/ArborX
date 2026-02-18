@@ -23,7 +23,6 @@ using CoordinatesList = std::tuple<float, double>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_box, Coordinate, CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Point = ArborX::Point<3, Coordinate>;
   using Box = ArborX::Box<3, Coordinate>;
 
@@ -41,7 +40,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_box, Coordinate, CoordinatesList)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_box_box, Coordinate, CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
+  using ArborX::intersects;
   using Box = ArborX::Box<3, Coordinate>;
 
   // uninitialized box does not intersect with other boxes
@@ -76,7 +75,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_box_box, Coordinate, CoordinatesList)
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_sphere_point, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Point = ArborX::Point<3, Coordinate>;
   using Sphere = ArborX::Sphere<3, Coordinate>;
 
@@ -92,7 +90,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_sphere_point, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_sphere_box, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Box = ArborX::Box<3, Coordinate>;
   using Sphere = ArborX::Sphere<3, Coordinate>;
 
@@ -101,10 +98,19 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_sphere_box, Coordinate,
   BOOST_TEST(!intersects(sphere, Box{{{1., 2., 3.}}, {{4., 5., 6.}}}));
 }
 
+BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_sphere_sphere, Coordinate,
+                              CoordinatesList)
+{
+  using Sphere = ArborX::Sphere<2, Coordinate>;
+
+  BOOST_TEST(intersects(Sphere{{-1, -1}, 1}, Sphere{{1, -1}, 1}));
+  BOOST_TEST(intersects(Sphere{{0, 0}, 1}, Sphere{{2, 2}, 5}));
+  BOOST_TEST(!intersects(Sphere{{-1, -1}, 0.9}, Sphere{{1, -1}, 0.9}));
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_sphere_triangle, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Triangle = ArborX::Triangle<3, Coordinate>;
   using Sphere = ArborX::Sphere<3, Coordinate>;
 
@@ -138,7 +144,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_sphere_triangle, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_triangle, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Point2 = ArborX::Point<2, Coordinate>;
 
   constexpr ArborX::Triangle<2, Coordinate> triangle{
@@ -160,7 +165,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_triangle, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_triangle_box, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Box = ArborX::Box<3, Coordinate>;
 
   constexpr ArborX::Triangle<3, Coordinate> triangle3{
@@ -187,7 +191,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_triangle_box, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_tetrahedron, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Point = ArborX::Point<3, Coordinate>;
 
   constexpr ArborX::ExperimentalHyperGeometry::Tetrahedron<Coordinate> tet{
@@ -208,7 +211,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_tetrahedron, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_segment_segment, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
+  using ArborX::intersects;
   using Segment2 = ArborX::Experimental::Segment<2, Coordinate>;
 
   constexpr Segment2 seg{{1, 1}, {2, 2}};
@@ -227,7 +230,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_segment_segment, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_segment_box, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Segment2 = ArborX::Experimental::Segment<2, Coordinate>;
 
   constexpr ArborX::Box<2, Coordinate> box2{{{0.0, 0.0}}, {{1.0, 1.0}}};
@@ -249,7 +251,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_segment_box, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_ellipse, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Point2 = ArborX::Point<2, Coordinate>;
 
   // ellipsoid [2x^2 - 3xy + 2y^2 <= 1]
@@ -272,7 +273,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_ellipse, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_ellipse_segment, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
+  using ArborX::intersects;
   using Segment2 = ArborX::Experimental::Segment<2, Coordinate>;
 
   // ellipsoid [2x^2 - 3xy + 2y^2 <= 1]
@@ -291,7 +292,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_ellipse_segment, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_ellipsoid_box, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
   using Box2 = ArborX::Box<2, Coordinate>;
   using Box3 = ArborX::Box<3, Coordinate>;
 
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_ellipsoid_box, Coordinate,
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_segment_triangle, Coordinate,
                               CoordinatesList)
 {
-  using ArborX::Experimental::intersects;
+  using ArborX::intersects;
   using Segment = ArborX::Experimental::Segment<3, Coordinate>;
   using Triangle = ArborX::Triangle<3, Coordinate>;
 
@@ -378,6 +378,7 @@ using KDOP_3D_types = std::tuple<ArborX::Experimental::KDOP<3, 6, float>,
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_kdop_kdop_2D, KDOP_t, KDOP_2D_types)
 {
+  using ArborX::intersects;
   using Coordinate = ArborX::GeometryTraits::coordinate_type_t<KDOP_t>;
   using Point = ArborX::Point<2, Coordinate>;
 
@@ -448,6 +449,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_point_kdop_2D, KDOP_t, KDOP_2D_types)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(intersects_kdop_kdop_3D, KDOP_t, KDOP_3D_types)
 {
+  using ArborX::intersects;
   using Coordinate = ArborX::GeometryTraits::coordinate_type_t<KDOP_t>;
   using Point = ArborX::Point<3, Coordinate>;
 
