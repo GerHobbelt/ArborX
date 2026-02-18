@@ -171,7 +171,7 @@ struct FindComponentNearestNeighbors
     auto const distance = [bounding_volume_i =
                                HappyTreeFriends::getIndexable(_bvh, i),
                            &bvh = _bvh](int j) {
-      using Details::distance;
+      using Experimental::distance;
       return HappyTreeFriends::isLeaf(bvh, j)
                  ? distance(bounding_volume_i,
                             HappyTreeFriends::getIndexable(bvh, j))
@@ -534,7 +534,7 @@ void assignVertexParents(ExecutionSpace const &space, Labels const &labels,
                          EdgesMapping const &edges_mapping, BVH const &bvh,
                          Parents parents)
 {
-  auto const n = edges_mapping.extent_int(0) + 1;
+  auto const n = edges_mapping.extent_int(0);
   int const vertices_offset = n - 1;
 
   Kokkos::parallel_for(
@@ -763,6 +763,7 @@ void resetSharedRadii(ExecutionSpace const &space, BVH const &bvh,
         auto const label_j = labels(j);
         if (label_i != label_j)
         {
+          using Experimental::distance;
           auto const r =
               metric(HappyTreeFriends::getValue(bvh, i).index,
                      HappyTreeFriends::getValue(bvh, j).index,
