@@ -9,6 +9,7 @@
  * SPDX-License-Identifier: BSD-3-Clause                                    *
  ****************************************************************************/
 
+#include <ArborXBenchmark_MPIKokkosScopeGuard.hpp>
 #include <ArborXBenchmark_TimeMonitor.hpp>
 #include <ArborX_DistributedTree.hpp>
 #include <ArborX_Point.hpp>
@@ -25,8 +26,6 @@
 #include <vector>
 
 #include <mpi.h>
-
-namespace bpo = boost::program_options;
 
 struct Parameters
 {
@@ -250,7 +249,7 @@ void main_(MPI_Comm comm, Parameters const &params)
 
 int main(int argc, char *argv[])
 {
-  MPI_Init(&argc, &argv);
+  ArborXBenchmark::MPIKokkosScopeGuard guard(argc, argv);
 
   MPI_Comm const comm = MPI_COMM_WORLD;
   int comm_rank;
@@ -263,31 +262,16 @@ int main(int argc, char *argv[])
               << std::endl;
   }
 
-  // Strip "--help" and "--kokkos-help" from the flags passed to Kokkos if we
-  // are not on MPI rank 0 to prevent Kokkos from printing the help message
-  // multiply.
-  if (comm_rank != 0)
-  {
-    auto *help_it = std::find_if(argv, argv + argc, [](std::string const &x) {
-      return x == "--help" || x == "--kokkos-help";
-    });
-    if (help_it != argv + argc)
-    {
-      std::swap(*help_it, *(argv + argc - 1));
-      --argc;
-    }
-  }
-
-  Kokkos::ScopeGuard guard(argc, argv);
+  namespace bpo = boost::program_options;
 
   Parameters params;
   std::string precision;
   bpo::options_description desc("Allowed options");
   // clang-format off
   desc.add_options()
-      ( "help", "produce help message" )
-      ( "values", bpo::value<int>(&params.n_values)->default_value(20000), "Number of indexable values (source) per MPI rank." )
-      ( "queries", bpo::value<int>(&params.n_queries)->default_value(5000), "Number of queries (target) per MPI rank." )
+      ( "help,h", "produce help message" )
+      ( "predicates,m", bpo::value<int>(&params.n_queries)->default_value(5000), "Number of predicates per MPI rank." )
+      ( "primitives,n", bpo::value<int>(&params.n_values)->default_value(20000), "Number of primitives per MPI rank." )
       ( "neighbors", bpo::value<int>(&params.n_neighbors)->default_value(10), "Desired number of results per query." )
       ( "shift", bpo::value<float>(&params.shift)->default_value(1.f), "Shift of the point clouds. '0' means the clouds are built "
                                                                        "at the same place, while '1' places the clouds next to each"
@@ -296,7 +280,7 @@ int main(int argc, char *argv[])
       ( "partition_dim", bpo::value<int>(&params.partition_dim)->default_value(3), "Number of dimension used by the partitioning of the global "
                                                                                    "point cloud. 1 -> local clouds are aligned on a line, 2 -> "
                                                                                    "local clouds form a board, 3 -> local clouds form a box." )
-      ( "precision", bpo::value<std::string>(&precision)->default_value("float"), "Precision (float | double)" )
+      ( "precision,p", bpo::value<std::string>(&precision)->default_value("float"), "Precision (float | double)" )
       ( "do-not-perform-knn-search", "skip kNN search" )
       ( "do-not-perform-radius-search", "skip radius search" )
       ( "shift-queries" , "By default, points are reused for the queries. Enabling this option shrinks the local box queries are created "
@@ -336,8 +320,6 @@ int main(int argc, char *argv[])
     main_<float>(comm, params);
   else
     main_<double>(comm, params);
-
-  MPI_Finalize();
 
   return EXIT_SUCCESS;
 }
